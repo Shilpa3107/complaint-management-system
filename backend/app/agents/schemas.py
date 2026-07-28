@@ -67,3 +67,11 @@ class RootCauseRecommendation(BaseModel):
     )
     reasoning: str = Field(description="Brief explanation connecting the complaint details to these causes")
     confidence: str = Field(description="One of: Low, Medium, High — how confident this hypothesis is given available info")
+
+class DuplicateCheckResult(BaseModel):
+    """LLM judgment on whether a new complaint duplicates an existing one."""
+
+    is_duplicate: bool = Field(description="True if this appears to be the same underlying issue as an existing complaint")
+    matching_complaint_ids: list[str] = Field(default=[], description="IDs of complaints judged to be duplicates")
+    reasoning: str = Field(description="Brief explanation of the judgment")
+

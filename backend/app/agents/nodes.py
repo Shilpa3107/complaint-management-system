@@ -4,6 +4,7 @@ from app.agents.llm_client import extraction_llm
 from app.agents.schemas import SeverityClassification
 from app.agents.llm_client import reasoning_llm
 from app.agents.schemas import RootCauseRecommendation
+from app.agents.schemas import DuplicateCheckResult
 
 REQUIRED_FIELDS = ["product_name", "batch_number", "complaint_description"]
 
@@ -127,4 +128,43 @@ Be honest about confidence — if the description doesn't give enough detail to 
         "likely_causes": result.likely_causes,
         "root_cause_reasoning": result.reasoning,
         "root_cause_confidence": result.confidence,
+    }
+
+def duplicate_check_node(state: ComplaintState) -> dict:
+    """Checks the current complaint against existing complaints with the same product/batch."""
+    fields = state["extracted_fields"]
+    db = state.get("db_session")
+
+    if db is None or not fields.product_name:
+        return {"is_duplicate": False, "duplicate_of": [], "duplicate_reasoning": "No database session or product name available."}
+
+    from app.models.complaint import Complaint
+
+    query = db.query(Complaint).filter(Complaint.product_name == fields.product_name)
+    if fields.batch_number:
+        query = query.filter(Complaint.batch_number == fields.batch_number)
+    candidates = query.limit(5).all()
+
+    if not candidates:
+        return {"is_duplicate": False, "duplicate_of": [], "duplicate_reasoning": "No existing complaints match this product/batch."}
+
+    candidates_text = "\n".join(
+        f"- ID {c.id}: {c.complaint_description}" for c in candidates if c.complaint_description
+    )
+
+    structured_llm = extraction_llm.with_structured_output(DuplicateCheckResult)
+    prompt = f"""A new complaint has been submitted:
+"{fields.complaint_description}"
+
+Here are existing complaints for the same product/batch:
+{candidates_text}
+
+Does the new complaint describe the SAME underlying issue as any of these? Only say yes if the
+core problem genuinely matches, not just the same product.
+"""
+    result = structured_llm.invoke(prompt)
+    return {
+        "is_duplicate": result.is_duplicate,
+        "duplicate_of": result.matching_complaint_ids,
+        "duplicate_reasoning": result.reasoning,
     }
