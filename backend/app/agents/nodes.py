@@ -5,6 +5,7 @@ from app.agents.schemas import SeverityClassification
 from app.agents.llm_client import reasoning_llm
 from app.agents.schemas import RootCauseRecommendation
 from app.agents.schemas import DuplicateCheckResult
+from app.agents.schemas import ComplaintFieldEdit
 
 REQUIRED_FIELDS = ["product_name", "batch_number", "complaint_description"]
 
@@ -167,4 +168,35 @@ core problem genuinely matches, not just the same product.
         "is_duplicate": result.is_duplicate,
         "duplicate_of": result.matching_complaint_ids,
         "duplicate_reasoning": result.reasoning,
+    }
+
+def edit_complaint_node(state: dict) -> dict:
+    current_data = state["current_complaint"]
+    user_message = state["user_message"]
+
+    structured_llm = extraction_llm.with_structured_output(ComplaintFieldEdit)
+    current_summary = "\n".join(f"{k}: {v}" for k, v in current_data.items() if v)
+
+    prompt = f"""The current complaint record has these values:
+{current_summary}
+
+The user sent this correction/instruction:
+"{user_message}"
+
+Identify ONLY the field(s) this message is asking to change, and their new values.
+Do not include fields the message doesn't mention. Do not guess at fields not explicitly stated.
+"""
+    result = structured_llm.invoke(prompt)
+    edit_dict = result.model_dump(exclude={"changed_fields"}, exclude_none=True)
+
+    # Deterministic type conversion, same pattern as date parsing
+    if "quantity_affected" in edit_dict:
+        try:
+            edit_dict["quantity_affected"] = float(edit_dict["quantity_affected"])
+        except (ValueError, TypeError):
+            del edit_dict["quantity_affected"]  # drop rather than crash on bad input
+
+    return {
+        "field_edits": edit_dict,
+        "changed_fields": result.changed_fields,
     }

@@ -75,3 +75,23 @@ class DuplicateCheckResult(BaseModel):
     matching_complaint_ids: list[str] = Field(default=[], description="IDs of complaints judged to be duplicates")
     reasoning: str = Field(description="Brief explanation of the judgment")
 
+class ComplaintFieldEdit(BaseModel):
+    """Represents a targeted correction to specific complaint fields based on
+    a natural language instruction. Only include fields the user's message
+    explicitly asks to change — omit everything else."""
+
+    complaint_source: Optional[str] = None
+    customer_name: Optional[str] = None
+    product_name: Optional[str] = None
+    product_strength: Optional[str] = None
+    batch_number: Optional[str] = None
+    manufacturing_date: Optional[str] = None
+    expiry_date: Optional[str] = None
+    quantity_affected: Optional[str] = None 
+    quantity_unit: Optional[str] = None
+    complaint_type: Optional[str] = None
+    complaint_date: Optional[str] = None
+    complaint_description: Optional[str] = None
+
+    changed_fields: list[str] = Field(default=[], description="List of field names that were actually changed")
+

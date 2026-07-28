@@ -66,3 +66,4 @@ class CopilotRequest(BaseModel):
 
 class CopilotResponse(BaseModel):
     response: str
+
