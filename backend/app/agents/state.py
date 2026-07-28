@@ -10,3 +10,9 @@ class ComplaintState(TypedDict):
     priority: Optional[str]
     severity_reasoning: Optional[str]
     clarification: Optional[str]
+
+class CopilotState(TypedDict):
+    user_message: str
+    complaint_context: dict
+    chat_history: list[dict]  # [{"role": "user"/"assistant", "content": "..."}]
+    response: Optional[str]

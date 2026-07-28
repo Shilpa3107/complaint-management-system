@@ -1,4 +1,4 @@
-from app.agents.state import ComplaintState
+from app.agents.state import ComplaintState, CopilotState
 from app.agents.schemas import ExtractedComplaintFields
 from app.agents.llm_client import extraction_llm
 from app.agents.schemas import SeverityClassification
@@ -75,3 +75,30 @@ Write one short, polite follow-up question (1-2 sentences) asking the complainan
 
     response = reasoning_llm.invoke(prompt)
     return {"clarification": response.content}
+
+def copilot_answer_node(state: CopilotState) -> dict:
+    """Answers a user question about a specific complaint, grounded in its data."""
+    context = state["complaint_context"]
+
+    context_summary = "\n".join(f"{k}: {v}" for k, v in context.items() if v)
+
+    history_text = ""
+    for turn in state.get("chat_history", []):
+        role = "User" if turn["role"] == "user" else "Assistant"
+        history_text += f"{role}: {turn['content']}\n"
+
+    prompt = f"""You are an AI assistant helping a pharmaceutical QA officer review a customer complaint.
+Answer the user's question using ONLY the complaint data below. If the answer isn't in the data, say so honestly.
+
+COMPLAINT DATA:
+{context_summary}
+
+CONVERSATION SO FAR:
+{history_text}
+
+USER QUESTION: {state['user_message']}
+
+Give a concise, professional answer (2-4 sentences unless more detail is clearly needed).
+"""
+    response = reasoning_llm.invoke(prompt)
+    return {"response": response.content}
