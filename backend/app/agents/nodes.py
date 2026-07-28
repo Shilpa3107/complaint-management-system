@@ -1,4 +1,4 @@
-from app.agents.state import ComplaintState, CopilotState
+from app.agents.state import ComplaintState, CopilotState, UnifiedCopilotState
 from app.agents.schemas import ExtractedComplaintFields
 from app.agents.llm_client import extraction_llm
 from app.agents.schemas import SeverityClassification
@@ -60,6 +60,7 @@ Guidance:
         "severity": result.severity.value,
         "priority": result.priority.value,
         "severity_reasoning": result.reasoning,
+        "suggested_next_action": result.suggested_next_action,
     }
 
 
@@ -80,12 +81,12 @@ Write one short, polite follow-up question (1-2 sentences) asking the complainan
     response = reasoning_llm.invoke(prompt)
     return {"clarification": response.content}
 
-def copilot_answer_node(state: CopilotState) -> dict:
+def copilot_answer_node(state: UnifiedCopilotState) -> dict:
     """Answers a user question about a specific complaint, grounded in its data."""
-    context = state["complaint_context"]
+    context = state.get("current_complaint", state.get("complaint_context", {}))
 
     context_summary = "\n".join(f"{k}: {v}" for k, v in context.items() if v)
-
+    
     history_text = ""
     for turn in state.get("chat_history", []):
         role = "User" if turn["role"] == "user" else "Assistant"
@@ -204,9 +205,9 @@ Do not include fields the message doesn't mention. Do not guess at fields not ex
 
 def classify_intent_node(state: dict) -> dict:
     """Determines whether the user's message is a new complaint, an edit, or a question."""
+
     if state.get("has_file"):
-        # A file upload is unambiguous - always treat as new complaint extraction
-        return {"intent": IntentLevel.NEW_COMPLAINT.value}
+        return {"intent": IntentLevel.NEW_COMPLAINT.value, "raw_text": state.get("raw_text", "")}
 
     structured_llm = extraction_llm.with_structured_output(IntentClassification)
     has_existing = bool(state.get("current_complaint"))
@@ -224,9 +225,13 @@ User message: "{state['user_message']}"
 If there is no existing complaint loaded, "edit" is not a valid intent - classify as new_complaint or question instead.
 """
     result = structured_llm.invoke(prompt)
-    return {"intent": result.intent.value}
 
+    updates = {"intent": result.intent.value}
+    if result.intent == IntentLevel.NEW_COMPLAINT:
+        # For a typed (non-file) new complaint, the user's message itself is the raw text to extract from
+        updates["raw_text"] = state["user_message"]
 
+    return updates
 def route_by_intent(state: dict) -> str:
     """Conditional edge: routes to the appropriate node based on classified intent."""
     intent = state.get("intent")

@@ -58,7 +58,10 @@ class SeverityClassification(BaseModel):
     severity: SeverityLevel = Field(description="Overall severity of the complaint")
     priority: PriorityLevel = Field(description="How urgently this needs QA review")
     reasoning: str = Field(description="Brief explanation for the severity/priority chosen")
-
+    suggested_next_action: str = Field(
+        description="A brief, concrete recommended next step, e.g. 'Route to QA Investigation & Issue Replacement'"
+    )
+    
 class RootCauseRecommendation(BaseModel):
     """AI-suggested likely root cause(s) for a complaint, for QA triage."""
 
