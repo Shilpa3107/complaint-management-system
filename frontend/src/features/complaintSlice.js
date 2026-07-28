@@ -56,7 +56,7 @@ const complaintSlice = createSlice({
     },
     newComplaintApplied(state, action) {
       // action.payload is the `extracted` object from the API response
-      state.form = { ...state.form, ...action.payload }
+      state.form = { ...state.form, ...action.payload, quantity_unit: action.payload.quantity_unit || 'units' }
       state.hasComplaintLoaded = true
       state.requestStatus = 'succeeded'
     },

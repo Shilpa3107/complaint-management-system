@@ -16,8 +16,6 @@ app.add_middleware(
 )
 
 app.include_router(complaints_router)
-app.include_router(extraction_router)
-app.include_router(copilot_router)
 app.include_router(copilot_unified_router)
 
 
