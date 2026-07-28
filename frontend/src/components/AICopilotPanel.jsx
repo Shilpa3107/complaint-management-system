@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import axios from 'axios'
 import { messageSent, fileAttached, responseReceived, responseFailed } from '../features/chatSlice'
@@ -11,6 +11,7 @@ import {
 } from '../features/complaintSlice'
 import './AICopilotPanel.css'
 
+
 const API_BASE = 'http://127.0.0.1:8000'
 
 function AICopilotPanel() {
@@ -21,6 +22,11 @@ function AICopilotPanel() {
   const fileInputRef = useRef(null)
   const [chatInput, setChatInput] = useState('')
   const hasComplaintLoaded = useSelector((state) => state.complaint.hasComplaintLoaded)
+  const messagesEndRef = useRef(null)
+
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+}, [messages, chatStatus])
 
   const callUnifiedCopilot = async ({ userMessage, file }) => {
     dispatch(requestStarted())
@@ -40,10 +46,9 @@ function AICopilotPanel() {
       })
       const data = res.data
 
-      dispatch(aiMetaUpdated(data))
-
       if (data.intent === 'new_complaint' && data.extracted) {
         dispatch(newComplaintApplied(data.extracted))
+        dispatch(aiMetaUpdated(data))
       } else if (data.intent === 'edit' && data.field_edits) {
         dispatch(editApplied(data.field_edits))
       }
@@ -84,19 +89,20 @@ function AICopilotPanel() {
       <p className="copilot-subtitle">Drop complaint files or paste text below.</p>
 
       <div className="chat-messages">
-        {messages.map((msg, i) => (
-          <div key={i} className={`chat-bubble ${msg.role}`}>
-            {msg.role === 'assistant' && <span className="bot-icon">🤖</span>}
-            <span>{msg.content}</span>
-          </div>
-        ))}
-        {chatStatus === 'loading' && (
-          <div className="chat-bubble assistant loading">
-            <span className="bot-icon">⚡</span>
-            <span>Thinking...</span>
-          </div>
-        )}
-      </div>
+  {messages.map((msg, i) => (
+    <div key={i} className={`chat-bubble ${msg.role}`}>
+      {msg.role === 'assistant' && <span className="bot-icon">🤖</span>}
+      <span>{msg.content}</span>
+    </div>
+  ))}
+  {chatStatus === 'loading' && (
+    <div className="chat-bubble assistant loading">
+      <span className="bot-icon">⚡</span>
+      <span>Thinking...</span>
+    </div>
+  )}
+  <div ref={messagesEndRef} />
+</div>
 
       <div className="chat-input-row">
         <button
