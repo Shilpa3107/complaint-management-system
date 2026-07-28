@@ -41,3 +41,9 @@ class ComplaintOut(ComplaintBase):
     status: str
     created_at: datetime
     updated_at: datetime
+
+class ComplaintExtractionResponse(BaseModel):
+    extracted: ComplaintCreate
+    missing_fields: list[str] = []
+    clarification: Optional[str] = None
+    severity_reasoning: Optional[str] = None
