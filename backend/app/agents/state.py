@@ -8,4 +8,5 @@ class ComplaintState(TypedDict):
     missing_fields: list[str]
     severity: Optional[str]
     priority: Optional[str]
+    severity_reasoning: Optional[str]
     clarification: Optional[str]
