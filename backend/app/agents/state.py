@@ -1,9 +1,10 @@
-from typing import TypedDict, Optional
+from typing import TypedDict, Optional, Any
 from app.agents.schemas import ExtractedComplaintFields
 
 
 class ComplaintState(TypedDict):
     raw_text: str
+    db_session: Optional[Any]
     extracted_fields: Optional[ExtractedComplaintFields]
     missing_fields: list[str]
     severity: Optional[str]

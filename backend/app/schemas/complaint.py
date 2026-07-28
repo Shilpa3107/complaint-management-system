@@ -47,6 +47,11 @@ class ComplaintExtractionResponse(BaseModel):
     missing_fields: list[str] = []
     clarification: Optional[str] = None
     severity_reasoning: Optional[str] = None
+    likely_causes: list[str] = []
+    root_cause_reasoning: Optional[str] = None
+    is_duplicate: bool = False
+    duplicate_of: list[str] = []
+    duplicate_reasoning: Optional[str] = None
 
 class ChatTurn(BaseModel):
     role: str  # "user" or "assistant"
