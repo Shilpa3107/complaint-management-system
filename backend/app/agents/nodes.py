@@ -6,6 +6,7 @@ from app.agents.llm_client import reasoning_llm
 from app.agents.schemas import RootCauseRecommendation
 from app.agents.schemas import DuplicateCheckResult
 from app.agents.schemas import ComplaintFieldEdit
+from app.agents.schemas import IntentClassification, IntentLevel
 
 REQUIRED_FIELDS = ["product_name", "batch_number", "complaint_description"]
 
@@ -200,3 +201,38 @@ Do not include fields the message doesn't mention. Do not guess at fields not ex
         "field_edits": edit_dict,
         "changed_fields": result.changed_fields,
     }
+
+def classify_intent_node(state: dict) -> dict:
+    """Determines whether the user's message is a new complaint, an edit, or a question."""
+    if state.get("has_file"):
+        # A file upload is unambiguous - always treat as new complaint extraction
+        return {"intent": IntentLevel.NEW_COMPLAINT.value}
+
+    structured_llm = extraction_llm.with_structured_output(IntentClassification)
+    has_existing = bool(state.get("current_complaint"))
+
+    prompt = f"""Classify this user message from a pharmaceutical complaint intake assistant.
+
+There {"IS" if has_existing else "is NOT"} an existing complaint currently loaded in the form.
+
+User message: "{state['user_message']}"
+
+- new_complaint: the message describes a fresh complaint (product, issue, batch details as new info)
+- edit: the message corrects/updates a field on the complaint ALREADY loaded (e.g. "actually the batch is...", "sorry I meant...", "update the quantity to...")
+- question: the message asks about the complaint without trying to change it (e.g. "why is this high severity?", "what's the batch number?")
+
+If there is no existing complaint loaded, "edit" is not a valid intent - classify as new_complaint or question instead.
+"""
+    result = structured_llm.invoke(prompt)
+    return {"intent": result.intent.value}
+
+
+def route_by_intent(state: dict) -> str:
+    """Conditional edge: routes to the appropriate node based on classified intent."""
+    intent = state.get("intent")
+    if intent == IntentLevel.NEW_COMPLAINT.value:
+        return "extract"
+    elif intent == IntentLevel.EDIT.value:
+        return "edit_complaint"
+    else:
+        return "answer_question"

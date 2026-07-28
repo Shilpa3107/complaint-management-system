@@ -95,3 +95,15 @@ class ComplaintFieldEdit(BaseModel):
 
     changed_fields: list[str] = Field(default=[], description="List of field names that were actually changed")
 
+class IntentLevel(str, Enum):
+    NEW_COMPLAINT = "new_complaint"
+    EDIT = "edit"
+    QUESTION = "question"
+
+
+class IntentClassification(BaseModel):
+    """Classifies what the user's chat message is trying to do."""
+
+    intent: IntentLevel = Field(description="What the user's message is trying to accomplish")
+    reasoning: str = Field(description="Brief justification for this classification")
+
