@@ -1,6 +1,9 @@
 import { useSelector, useDispatch } from 'react-redux'
-import { formReset } from '../features/complaintSlice'
+import axios from 'axios'
+import { formReset, saveStarted, saveSucceeded, saveFailed } from '../features/complaintSlice'
 import './ComplaintForm.css'
+
+const API_BASE = 'http://127.0.0.1:8000'
 
 function ComplaintForm() {
   const dispatch = useDispatch()
@@ -11,9 +14,22 @@ function ComplaintForm() {
 
   const handleReset = () => dispatch(formReset())
 
-  const handleSave = () => {
-    console.log('Saving complaint:', form)
-    // Real save logic (POST /complaints/) comes next
+  const handleSave = async () => {
+    dispatch(saveStarted())
+    try {
+      const payload = {
+        ...form,
+        quantity_affected: form.quantity_affected === '' ? null : Number(form.quantity_affected),
+        manufacturing_date: form.manufacturing_date || null,
+        expiry_date: form.expiry_date || null,
+        complaint_date: form.complaint_date || null,
+      }
+      await axios.post(`${API_BASE}/complaints/`, payload)
+      dispatch(saveSucceeded())
+    } catch (err) {
+      console.error('Save failed:', err)
+      dispatch(saveFailed())
+    }
   }
 
   const displayValue = (val) => val || ''
@@ -149,9 +165,13 @@ function ComplaintForm() {
       <div className="form-actions">
         <button className="btn-secondary" onClick={handleReset}>Reset Form</button>
         <button className="btn-primary" onClick={handleSave} disabled={!hasComplaintLoaded || saveStatus === 'loading'}>
-          {saveStatus === 'loading' ? 'Saving...' : 'Commit to QMS Ledger'}
+          {saveStatus === 'loading' ? 'Saving...' : saveStatus === 'succeeded' ? '✓ Saved' : 'Commit to QMS Ledger'}
         </button>
       </div>
+      {saveStatus === 'failed' && (
+        <p className="save-error">Save failed. Please check the backend connection and try again.</p>
+      )}       
+     
     </div>
   )
 }

@@ -183,3 +183,9 @@ section h3 {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.save-error {
+  color: #dc2626;
+  font-size: 13px;
+  text-align: right;
+  margin-top: 8px;
+}

@@ -191,16 +191,20 @@ Do not include fields the message doesn't mention. Do not guess at fields not ex
     result = structured_llm.invoke(prompt)
     edit_dict = result.model_dump(exclude={"changed_fields"}, exclude_none=True)
 
-    # Deterministic type conversion, same pattern as date parsing
     if "quantity_affected" in edit_dict:
         try:
             edit_dict["quantity_affected"] = float(edit_dict["quantity_affected"])
         except (ValueError, TypeError):
-            del edit_dict["quantity_affected"]  # drop rather than crash on bad input
+            del edit_dict["quantity_affected"]
+
+    # Derive changed_fields deterministically from what's actually in edit_dict,
+    # rather than trusting the LLM's separate self-reported list (which can be
+    # inconsistent with the actual extracted values).
+    changed_fields = list(edit_dict.keys())
 
     return {
         "field_edits": edit_dict,
-        "changed_fields": result.changed_fields,
+        "changed_fields": changed_fields,
     }
 
 def classify_intent_node(state: dict) -> dict:

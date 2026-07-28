@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 import json
 
+
 from app.agents.document_parser import extract_text_from_file
 from app.agents.unified_graph import unified_copilot_graph
 from app.agents.date_utils import parse_flexible_date
@@ -87,6 +88,14 @@ async def unified_copilot(
             priority=result.get("priority"),
             raw_source_text=raw_text or user_message,
         )
+
+    field_edits = result.get("field_edits")
+    if field_edits:
+        for date_field in ["manufacturing_date", "expiry_date", "complaint_date"]:
+            if date_field in field_edits:
+                parsed = parse_flexible_date(field_edits[date_field])
+                field_edits[date_field] = parsed.isoformat() if parsed else None
+
 
     return UnifiedCopilotResponse(
         intent=intent,
