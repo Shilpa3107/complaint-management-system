@@ -1,0 +1,21 @@
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.panel {
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.panel-left {
+  flex: 1.3;
+  border-right: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.panel-right {
+  flex: 1;
+  background: #ffffff;
+}
