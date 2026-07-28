@@ -10,6 +10,12 @@ class ComplaintState(TypedDict):
     priority: Optional[str]
     severity_reasoning: Optional[str]
     clarification: Optional[str]
+    likely_causes: Optional[list[str]]
+    root_cause_reasoning: Optional[str]
+    root_cause_confidence: Optional[str]
+    is_duplicate: Optional[bool]
+    duplicate_of: Optional[list[str]]
+    duplicate_reasoning: Optional[str]
 
 class CopilotState(TypedDict):
     user_message: str

@@ -3,6 +3,7 @@ from app.agents.schemas import ExtractedComplaintFields
 from app.agents.llm_client import extraction_llm
 from app.agents.schemas import SeverityClassification
 from app.agents.llm_client import reasoning_llm
+from app.agents.schemas import RootCauseRecommendation
 
 REQUIRED_FIELDS = ["product_name", "batch_number", "complaint_description"]
 
@@ -102,3 +103,28 @@ Give a concise, professional answer (2-4 sentences unless more detail is clearly
 """
     response = reasoning_llm.invoke(prompt)
     return {"response": response.content}
+
+def root_cause_node(state: ComplaintState) -> dict:
+    """Suggests likely root cause(s) for the complaint, to assist QA triage."""
+    fields = state["extracted_fields"]
+    structured_llm = reasoning_llm.with_structured_output(RootCauseRecommendation)
+
+    prompt = f"""You are a pharmaceutical QA investigator. Based on this complaint, suggest the
+most likely root cause(s) — this is a preliminary hypothesis to guide investigation, not a final finding.
+
+Product: {fields.product_name}
+Complaint Type: {fields.complaint_type}
+Description: {fields.complaint_description}
+
+Consider common pharma manufacturing root cause categories: packaging/sealing defects,
+storage/transport conditions, equipment calibration issues, raw material variability,
+human error in handling, or contamination during production.
+
+Be honest about confidence — if the description doesn't give enough detail to be confident, say so.
+"""
+    result = structured_llm.invoke(prompt)
+    return {
+        "likely_causes": result.likely_causes,
+        "root_cause_reasoning": result.reasoning,
+        "root_cause_confidence": result.confidence,
+    }
