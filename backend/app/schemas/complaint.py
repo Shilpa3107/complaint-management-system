@@ -47,3 +47,17 @@ class ComplaintExtractionResponse(BaseModel):
     missing_fields: list[str] = []
     clarification: Optional[str] = None
     severity_reasoning: Optional[str] = None
+
+class ChatTurn(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
+class CopilotRequest(BaseModel):
+    user_message: str
+    complaint_context: dict
+    chat_history: list[ChatTurn] = []
+
+
+class CopilotResponse(BaseModel):
+    response: str
