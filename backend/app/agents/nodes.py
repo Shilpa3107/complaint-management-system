@@ -210,7 +210,7 @@ def classify_intent_node(state: dict) -> dict:
         return {"intent": IntentLevel.NEW_COMPLAINT.value, "raw_text": state.get("raw_text", "")}
 
     structured_llm = extraction_llm.with_structured_output(IntentClassification)
-    has_existing = bool(state.get("current_complaint"))
+    has_existing = bool(state.get("current_complaint")) and any(state.get("current_complaint", {}).values())
 
     prompt = f"""Classify this user message from a pharmaceutical complaint intake assistant.
 
