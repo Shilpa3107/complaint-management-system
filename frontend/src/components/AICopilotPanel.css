@@ -182,3 +182,33 @@
   text-align: center;
   margin-top: 8px;
 }
+
+.copilot-subtitle {
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.attach-btn {
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  width: 40px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.attach-btn:disabled,
+.chat-input-row input:disabled,
+.chat-input-row button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chat-bubble.loading {
+  opacity: 0.7;
+}
+
+.chat-bubble.user.isFile {
+  font-style: italic;
+}

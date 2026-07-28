@@ -139,3 +139,47 @@ section h3 {
   color: #374151;
   border: 1px solid #d1d5db;
 }
+
+.readonly-hint {
+  font-size: 12px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.field input[readonly],
+.field textarea[readonly] {
+  cursor: default;
+}
+
+.risk-assessment {
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.risk-assessment h3 {
+  color: #4338ca;
+}
+
+.cause-list {
+  margin: 4px 0 0 18px;
+  font-size: 14px;
+}
+
+.duplicate-warning {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

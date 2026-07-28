@@ -1,33 +1,39 @@
 import { createSlice } from '@reduxjs/toolkit'
 
+const emptyForm = {
+  complaint_source: '',
+  customer_name: '',
+  product_name: '',
+  product_strength: '',
+  batch_number: '',
+  manufacturing_date: '',
+  expiry_date: '',
+  quantity_affected: '',
+  quantity_unit: 'units',
+  complaint_type: '',
+  complaint_date: '',
+  complaint_description: '',
+  initial_severity: '',
+  priority: '',
+}
+
+const emptyAiMeta = {
+  missingFields: [],
+  clarification: null,
+  severityReasoning: null,
+  suggestedNextAction: null,
+  likelyCauses: [],
+  rootCauseReasoning: null,
+  isDuplicate: false,
+  duplicateOf: [],
+  duplicateReasoning: null,
+}
+
 const initialState = {
-  form: {
-    complaint_source: '',
-    customer_name: '',
-    product_name: '',
-    product_strength: '',
-    batch_number: '',
-    manufacturing_date: '',
-    expiry_date: '',
-    quantity_affected: '',
-    quantity_unit: 'units',
-    complaint_type: '',
-    complaint_date: '',
-    complaint_description: '',
-    initial_severity: '',
-    priority: '',
-  },
-  aiMeta: {
-    missingFields: [],
-    clarification: null,
-    severityReasoning: null,
-    likelyCauses: [],
-    rootCauseReasoning: null,
-    isDuplicate: false,
-    duplicateOf: [],
-    duplicateReasoning: null,
-  },
-  extractionStatus: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+  form: emptyForm,
+  aiMeta: emptyAiMeta,
+  hasComplaintLoaded: false,
+  requestStatus: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   saveStatus: 'idle',
 }
 
@@ -35,36 +41,43 @@ const complaintSlice = createSlice({
   name: 'complaint',
   initialState,
   reducers: {
-    fieldChanged(state, action) {
-      const { field, value } = action.payload
-      state.form[field] = value
-    },
     formReset(state) {
-      state.form = initialState.form
-      state.aiMeta = initialState.aiMeta
-      state.extractionStatus = 'idle'
+      state.form = emptyForm
+      state.aiMeta = emptyAiMeta
+      state.hasComplaintLoaded = false
+      state.requestStatus = 'idle'
       state.saveStatus = 'idle'
     },
-    extractionStarted(state) {
-      state.extractionStatus = 'loading'
+    requestStarted(state) {
+      state.requestStatus = 'loading'
     },
-    extractionSucceeded(state, action) {
-      const { extracted, ...meta } = action.payload
-      state.form = { ...state.form, ...extracted }
+    requestFailed(state) {
+      state.requestStatus = 'failed'
+    },
+    newComplaintApplied(state, action) {
+      // action.payload is the `extracted` object from the API response
+      state.form = { ...state.form, ...action.payload }
+      state.hasComplaintLoaded = true
+      state.requestStatus = 'succeeded'
+    },
+    editApplied(state, action) {
+      // action.payload is the `field_edits` diff object from the API response
+      state.form = { ...state.form, ...action.payload }
+      state.requestStatus = 'succeeded'
+    },
+    aiMetaUpdated(state, action) {
+      const meta = action.payload
       state.aiMeta = {
         missingFields: meta.missing_fields || [],
         clarification: meta.clarification,
         severityReasoning: meta.severity_reasoning,
+        suggestedNextAction: meta.suggested_next_action,
         likelyCauses: meta.likely_causes || [],
         rootCauseReasoning: meta.root_cause_reasoning,
         isDuplicate: meta.is_duplicate || false,
         duplicateOf: meta.duplicate_of || [],
         duplicateReasoning: meta.duplicate_reasoning,
       }
-      state.extractionStatus = 'succeeded'
-    },
-    extractionFailed(state) {
-      state.extractionStatus = 'failed'
     },
     saveStarted(state) {
       state.saveStatus = 'loading'
@@ -79,11 +92,12 @@ const complaintSlice = createSlice({
 })
 
 export const {
-  fieldChanged,
   formReset,
-  extractionStarted,
-  extractionSucceeded,
-  extractionFailed,
+  requestStarted,
+  requestFailed,
+  newComplaintApplied,
+  editApplied,
+  aiMetaUpdated,
   saveStarted,
   saveSucceeded,
   saveFailed,
